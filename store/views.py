@@ -4,6 +4,7 @@ from .models import Product
 from carts.models import CartItem
 from carts.views import _cart_id
 from category.models import Category
+from store.models import Variation
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
