@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -131,8 +132,8 @@ MESSAGE_TAGS = {
 # SMTP configuration
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'amazingbryan02@gmail.com'
-EMAIL_HOST_PASSWORD = 'gjuyrfuuldszgmih'
+EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 EMAIL_USE_TLS = True
 
 # Default primary key field type

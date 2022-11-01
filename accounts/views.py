@@ -6,6 +6,7 @@ from accounts.models import Account
 from django.contrib import messages
 from django.contrib import auth
 
+
 # Email Verification Imports
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
@@ -13,6 +14,9 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+
+from carts.models import Cart, CartItem
+from carts.views import _cart_id
 
 
 def register(request):
@@ -59,6 +63,43 @@ def login(request):
         user = auth.authenticate(email=email, password=password)
 
         if user is not None:
+            try:
+                cart = Cart.objects.get(cart_id=_cart_id(request))
+                is_cart_item_exists = CartItem.objects.filter(cart=cart).exists()
+                if is_cart_item_exists:
+                    cart_item = CartItem.objects.filter(cart=cart)
+
+                    # Getting the product variation by cart id
+                    product_variation = []
+                    for item in cart_item:
+                        variation = item.variations.all()
+                        product_variation.append(list(variation))
+
+                    # Get the cart items from the user to access product variation
+                    cart_item = CartItem.objects.filter(user=user)
+                    ex_var_list = []
+                    id = []
+                    for item in cart_item:
+                        existing_variation = item.variations.all()
+                        ex_var_list.append(list(existing_variation))
+                        id.append(item.id)
+
+                    for pr in product_variation:
+                        if pr in ex_var_list:
+                            index = ex_var_list.index(pr)
+                            item_id = id[index]
+                            item = CartItem.objects.get(id=item_id)
+                            item.quantity += 1
+                            item.user = user
+                            item.save()
+                        else:
+                            cart_item = CartItem.objects.filter(cart=cart)
+                            for item in cart_item:
+                                item.user = user
+                                item.save()
+
+            except:
+                pass
             auth.login(request, user)
             messages.success(request, 'You are now logged in')
             return redirect('dashboard')
@@ -146,7 +187,7 @@ def reset_password(request):
         new_password = request.POST['new_password']
         confirm_password = request.POST['confirm_password']
         if new_password == confirm_password:
-            uid = request.session.get['uid']
+            uid = request.session.get('uid')
             user = Account.objects.get(pk=uid)
             user.set_password(new_password)
             user.save()
