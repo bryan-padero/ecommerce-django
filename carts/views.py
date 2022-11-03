@@ -17,6 +17,7 @@ def add_cart(request, product_id):
     print(current_user)
     product = Product.objects.get(id=product_id)
     if current_user.is_authenticated:
+        cart = Cart.objects.create(cart_id=_cart_id(request))
         product_variation = []
         if request.method == 'POST':
             for item in request.POST:
@@ -47,17 +48,13 @@ def add_cart(request, product_id):
                 item.quantity += 1
                 item.save()
             else:
-                item = CartItem.objects.create(product=product, quantity=1, user=current_user)
+                item = CartItem.objects.create(product=product, quantity=1, user=current_user, cart=cart)
                 if len(product_variation) > 0:
                     item.variations.clear()
                     item.variations.add(*product_variation)
                 item.save()
         else:
-            cart_item = CartItem.objects.create(
-                product=product,
-                quantity=1,
-                user=current_user,
-            )
+            cart_item = CartItem.objects.create(product=product, quantity=1, user=current_user, cart=cart)
             if len(product_variation) > 0:
                 cart_item.variations.clear()
                 cart_item.variations.add(*product_variation)
