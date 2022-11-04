@@ -1,4 +1,5 @@
 from django.core.mail import EmailMessage
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from carts.models import CartItem
@@ -68,7 +69,11 @@ def payments(request):
 
     # Send order number and transaction id back to sendData method via Jsonresponse
 
-    return render(request, 'orders/payments.html')
+    data = {
+        'order_number': order.order_number,
+        'transID': payment.payment_id,
+    }
+    return JsonResponse(data)
 
 
 def place_order(request, total=0, quantity=0):
@@ -131,4 +136,29 @@ def place_order(request, total=0, quantity=0):
         else:
             return redirect('checkout')
 
+
+def order_complete(request):
+    order_number = request.GET.get('order_number')
+    transID = request.GET.get('payment_id')
+    try:
+        order = Order.objects.get(order_number=order_number, is_ordered=True)
+        ordered_products = OrderProduct.objects.filter(order_id=order.id)
+
+        subtotal = 0
+        for i in ordered_products:
+            subtotal += i.product_price * i.quantity
+
+        payment = Payment.objects.get(payment_id=transID)
+
+        context = {
+            'order': order,
+            'ordered_products': ordered_products,
+            'order_number': order_number,
+            'transID': payment.payment_id,
+            'payment': payment,
+            'subtotal': subtotal,
+        }
+        return render(request, "orders/order_complete.html", context)
+    except(Payment.DoesNotExist, Order.DoesNotExist):
+        return redirect('home')
 
